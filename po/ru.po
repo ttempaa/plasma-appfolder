@@ -1,0 +1,240 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: com.github.ttempaa.plasma.appfolder\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-11-18 06:38+0300\n"
+"Last-Translator: ttempaa <ttempaa.mt@gmail.com>\n"
+"Language-Team: Russian\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Folder"
+msgstr "Папка"
+
+msgid "Applications"
+msgstr "Приложения"
+
+msgid "Choose Folder"
+msgstr "Выбор папки"
+
+msgid "Path:"
+msgstr "Путь:"
+
+msgid "Folder with .desktop application shortcuts. Create it anywhere and drop launchers into it."
+msgstr "Папка с ярлыками приложений (.desktop). Создайте её где угодно и перетащите туда ярлыки."
+
+msgid "Label:"
+msgstr "Подпись:"
+
+msgid "Same as folder name if empty"
+msgstr "Если пусто — имя папки"
+
+msgid "Text under the icon; leave empty to use the folder name."
+msgstr "Текст под значком; оставьте пустым, чтобы использовать имя папки."
+
+msgid "Icon"
+msgstr "Значок"
+
+msgid "Size:"
+msgstr "Размер:"
+
+msgid "Small (22 px)"
+msgstr "Маленькие (22 px)"
+
+msgid "Medium (32 px)"
+msgstr "Средние (32 px)"
+
+msgid "Large (48 px)"
+msgstr "Крупные (48 px)"
+
+msgid "Huge (64 px)"
+msgstr "Большие (64 px)"
+
+msgid "Very large (96 px)"
+msgstr "Очень большие (96 px)"
+
+msgid "Enormous (128 px)"
+msgstr "Огромные (128 px)"
+
+msgid "Maximum (256 px)"
+msgstr "Максимальные (256 px)"
+
+msgid "Match your desktop icon size for a perfect fit."
+msgstr "Выберите тот же размер, что у значков рабочего стола, для идеального совпадения."
+
+msgid "Grid:"
+msgstr "Сетка:"
+
+msgid "Max:"
+msgstr "Максимум:"
+
+msgid "Largest grid the automatic mode may pick."
+msgstr "Наибольшая сетка, которую может выбрать автоматический режим."
+
+msgid "Sorting:"
+msgstr "Сортировка:"
+
+msgid "Name (A–Z)"
+msgstr "Имя (А–Я)"
+
+msgid "Name (Z–A)"
+msgstr "Имя (Я–А)"
+
+msgid "File name"
+msgstr "Имя файла"
+
+msgid "Order of the shortcuts in the icon and the popup."
+msgstr "Порядок ярлыков в значке и всплывающем окне."
+
+msgid "How many mini-icons the composite shows. Auto grows with the folder contents."
+msgstr "Сколько мини-значков показывает составная иконка. В режиме «Авто» сетка растёт вместе с содержимым папки."
+
+msgid "Frame:"
+msgstr "Рамка:"
+
+msgid "Around the icons"
+msgstr "вокруг значков"
+
+msgid "Semi-transparent card behind the mini-icons."
+msgstr "Полупрозрачная подложка позади мини-значков."
+
+msgid "Popup"
+msgstr "Всплывающая панель"
+
+msgid "Position:"
+msgstr "Положение:"
+
+msgid "Auto"
+msgstr "Авто"
+
+msgid "Above"
+msgstr "Сверху"
+
+msgid "Below"
+msgstr "Снизу"
+
+msgid "To the left"
+msgstr "Слева"
+
+msgid "To the right"
+msgstr "Справа"
+
+msgid "Where the popup appears relative to the widget."
+msgstr "Где открывается панель относительно виджета."
+
+msgid "Preference:"
+msgstr "Приоритет:"
+
+msgid "Up"
+msgstr "Вверх"
+
+msgid "Down"
+msgstr "Вниз"
+
+msgid "Side that wins when several sides are equally good."
+msgstr "Сторона, которая побеждает, когда несколько сторон подходят одинаково хорошо."
+
+msgid "Strength:"
+msgstr "Сила:"
+
+msgid "How far the preferred side may lag behind the best one and still win, in percent. 0 — always the nearest screen edge wins."
+msgstr "Насколько (в процентах) приоритетная сторона может уступать лучшей и всё же побеждать. При 0 всегда выигрывает ближайший край экрана."
+
+msgid "%"
+msgstr "%"
+
+msgid "Open:"
+msgstr "Открытие:"
+
+msgid "Screen margins"
+msgstr "Отступы от краёв экрана"
+
+msgid "Top:"
+msgstr "Сверху:"
+
+msgid "Bottom:"
+msgstr "Снизу:"
+
+msgid "Left:"
+msgstr "Слева:"
+
+msgid "Right:"
+msgstr "Справа:"
+
+msgid "Forbidden zone the popup never enters, for example behind the taskbar."
+msgstr "Запретная зона, куда панель не заходит ни при каких условиях, например за панелью задач."
+
+msgid "Forbidden zone the popup never enters."
+msgstr "Запретная зона, куда панель не заходит ни при каких условиях."
+
+msgid "Calibration:"
+msgstr "Калибровка:"
+
+msgid "Adjust on screen…"
+msgstr "Настроить на экране…"
+
+msgid "Drag the bands right on your screen and read exact pixel values."
+msgstr "Подтяните полосы прямо на вашем экране и считайте точные значения в пикселях."
+
+msgid "Drag the bands to where the popup must not go, then press Done or Esc"
+msgstr "Потяните полосы до границ, куда панель заходить не должна, затем нажмите «Готово» или Esc"
+
+msgid "Reset"
+msgstr "Сбросить"
+
+msgid "Done"
+msgstr "Готово"
+
+msgid "Not configured"
+msgstr "Не настроено"
+
+msgid "Open Folder"
+msgstr "Открыть папку"
+
+msgid "Unknown"
+msgstr "Без названия"
+
+msgid ""
+"The folder is empty.\n"
+"Put application shortcuts here."
+msgstr ""
+"Папка пуста.\n"
+"Положите сюда ярлыки приложений."
+
+msgid "Browse…"
+msgstr "Обзор…"
+
+msgid "Pick the folder on disk."
+msgstr "Выбрать папку на диске."
+
+msgid "Widget"
+msgstr "Виджет"
+
+msgid "Shared by all app folder widgets; applied immediately."
+msgstr "Общие для всех папок-виджетов; применяются сразу."
+
+msgid "Common"
+msgstr "Общие"
+
+msgid "New widgets"
+msgstr "Новые виджеты"
+
+msgid "Every widget you add to the desktop starts with these settings. Existing widgets are not changed."
+msgstr "Каждый виджет, добавленный на рабочий стол, получает эти настройки. Уже добавленные виджеты не меняются."
+
+msgid "Icon size given to newly added widgets."
+msgstr "Размер значка для новых виджетов."
+
+msgid "Composite grid given to newly added widgets."
+msgstr "Сетка композита для новых виджетов."
+
+msgid "Click"
+msgstr "Клик"
+
+msgid "Hover"
+msgstr "Наведение"
+
+msgid "Whether the popup opens on click or on hover."
+msgstr "Панель открывается кликом или наведением."

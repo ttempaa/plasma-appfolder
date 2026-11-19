@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="folder" type="String">
+            <label>Folder with .desktop launchers</label>
+            <default></default>
+        </entry>
+        <entry name="defaultsApplied" type="Bool">
+            <label>One-shot guard: shared defaults apply to a fresh widget only once</label>
+            <default>false</default>
+        </entry>
+        <entry name="openOnHover" type="Bool">
+            <label>Open the popup on hover instead of click</label>
+            <default>false</default>
+        </entry>
+        <entry name="popupPlacement" type="String">
+            <label>Popup placement: auto, up, down, left, right</label>
+            <default>auto</default>
+        </entry>
+        <entry name="autoPreference" type="String">
+            <label>Preferred side for the auto placement: up, down, left, right</label>
+            <default>up</default>
+        </entry>
+        <entry name="autoBias" type="Int">
+            <label>Strength of the auto preference, percent of screen size</label>
+            <default>12</default>
+        </entry>
+        <entry name="iconSize" type="Int">
+            <label>Icon size in pixels</label>
+            <default>64</default>
+        </entry>
+        <entry name="gridMode" type="String">
+            <label>Composite grid: auto, 2, 3, 4</label>
+            <default>auto</default>
+        </entry>
+        <entry name="gridMax" type="Int">
+            <label>Largest grid the auto mode may pick, 2 to 4</label>
+            <default>3</default>
+        </entry>
+        <entry name="sortMode" type="String">
+            <label>Shortcut order: name, nameDesc, file</label>
+            <default>name</default>
+        </entry>
+        <entry name="showFrame" type="Bool">
+            <label>Draw a frame around the composite icon</label>
+            <default>true</default>
+        </entry>
+        <entry name="labelText" type="String">
+            <label>Custom label under the icon; empty = folder name</label>
+            <default></default>
+        </entry>
+    </group>
+</kcfg>

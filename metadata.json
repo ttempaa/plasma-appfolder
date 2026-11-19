@@ -1,0 +1,24 @@
+{
+    "KPlugin": {
+        "Id": "com.github.ttempaa.plasma.appfolder",
+        "Version": "1.0.0",
+        "Name": "App Folder",
+        "Name[ru]": "Папка приложений",
+        "Description": "Folder-style application launcher for the desktop",
+        "Description[ru]": "Папка приложений: одна иконка-сетка, клик — popup с ярлыками",
+        "Comment": "A folder of application launchers shown as a phone-style icon",
+        "Comment[ru]": "Папка с ярлыками приложений в виде телефонной иконки",
+        "Icon": "/icons/com.github.ttempaa.plasma.appfolder.svg",
+        "Category": "Application Launchers",
+        "License": "MIT",
+        "Authors": [
+            {
+                "Name": "ttempaa"
+            }
+        ]
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API": "declarativeappletscript",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "ui/main.qml"
+}
