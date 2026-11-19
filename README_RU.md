@@ -19,7 +19,9 @@
   <a href="README.md">English</a> | Русский
 </p>
 
-<video src="docs/demo.mp4" autoplay loop muted playsinline></video>
+<p align="center">
+  <img width="675" height="450" alt="demo.webp" src="https://github.com/user-attachments/assets/ee0d1ff6-b962-4dfd-b18d-59a13fac47d3" />
+</p>
 
 ## Возможности
 
