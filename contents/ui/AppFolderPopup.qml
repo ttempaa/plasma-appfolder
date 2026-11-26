@@ -10,13 +10,13 @@ import "code/Icons.js" as Icons
 PlasmaCore.Dialog {
     id: popup
 
-    property var appInfos: []
+    property var apps: []
     property int cellPx: 64
     property int cols: 2
     property int maxVisibleRows: 5
 
     signal launched(var info)
-    signal hoverChanged(bool hovered)
+    signal hovered(bool hovered)
 
     // pre-show size estimation before the dialog has a frame geometry
     readonly property alias contentImplicitWidth: popupContent.implicitWidth
@@ -34,16 +34,15 @@ PlasmaCore.Dialog {
 
         readonly property int iconPx: Icons.stepDown(popup.cellPx * 0.58)
         // one-line rows land exactly on cellPx
-        readonly property int rowPad: Math.max(
+        readonly property int rowPadding: Math.max(
             0,
             popup.cellPx - Kirigami.Units.smallSpacing * 2 - iconPx - Math.ceil(popupLabelMetrics.height)
         )
 
-        readonly property var rowChunks: {
+        readonly property var rows: {
             const chunks = [];
-            const apps = popup.appInfos;
-            for (let i = 0; i < apps.length; i += popup.cols) {
-                chunks.push(apps.slice(i, i + popup.cols));
+            for (let i = 0; i < popup.apps.length; i += popup.cols) {
+                chunks.push(popup.apps.slice(i, i + popup.cols));
             }
             return chunks.length > 0 ? chunks : [[]];
         }
@@ -59,7 +58,7 @@ PlasmaCore.Dialog {
         height: implicitHeight
 
         HoverHandler {
-            onHoveredChanged: popup.hoverChanged(hovered)
+            onHoveredChanged: popup.hovered(hovered)
         }
 
         FontMetrics {
@@ -67,7 +66,6 @@ PlasmaCore.Dialog {
         }
 
         Flickable {
-            id: flick
 
             anchors.fill: parent
             anchors.margins: Kirigami.Units.largeSpacing
@@ -83,7 +81,7 @@ PlasmaCore.Dialog {
                 id: contentColumn
 
                 Repeater {
-                    model: popupContent.rowChunks
+                    model: popupContent.rows
 
                     Row {
                         Repeater {
@@ -93,10 +91,10 @@ PlasmaCore.Dialog {
                                 id: tile
 
                                 width: popup.cellPx
-                                height: tileCol.implicitHeight + popupContent.rowPad
+                                height: tileColumn.implicitHeight + popupContent.rowPadding
 
                                 Column {
-                                    id: tileCol
+                                    id: tileColumn
 
                                     anchors.top: parent.top
                                     anchors.topMargin: Kirigami.Units.smallSpacing
@@ -179,7 +177,7 @@ PlasmaCore.Dialog {
             width: parent.width - Kirigami.Units.gridUnit * 3
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
-            visible: popup.appInfos.length === 0
+            visible: popup.apps.length === 0
             text: i18n("The folder is empty.\nPut application shortcuts here.")
         }
     }

@@ -11,9 +11,9 @@ import "code/SharedConf.js" as SharedConf
 PlasmaCore.Dialog {
     id: marginEditor
 
-    property var edgeMargins: ({ top: 0, right: 0, bottom: 0, left: 0 })
+    property var screenMargins: ({ top: 0, right: 0, bottom: 0, left: 0 })
 
-    signal accepted(var edgeMargins)
+    signal accepted(var screenMargins)
 
     visible: false
     location: PlasmaCore.Types.Floating
@@ -21,22 +21,22 @@ PlasmaCore.Dialog {
     backgroundHints: PlasmaCore.Types.NoBackground
     hideOnWindowDeactivate: false
 
-    function open(screenW, screenH) {
+    function open(screenWidth, screenHeight) {
         // the screen size comes via arguments: before the dialog is shown,
         // the Screen attached property would fall back to the default
-        editorRoot.implicitWidth = screenW;
-        editorRoot.implicitHeight = screenH;
+        editorRoot.implicitWidth = screenWidth;
+        editorRoot.implicitHeight = screenHeight;
         marginEditor.x = 0;
         marginEditor.y = 0;
-        draft.top = edgeMargins.top;
-        draft.right = edgeMargins.right;
-        draft.bottom = edgeMargins.bottom;
-        draft.left = edgeMargins.left;
+        draft.top = screenMargins.top;
+        draft.right = screenMargins.right;
+        draft.bottom = screenMargins.bottom;
+        draft.left = screenMargins.left;
         marginEditor.visible = true;
         editorRoot.forceActiveFocus();
     }
 
-    function close() {
+    function finish() {
         marginEditor.accepted({
             top: draft.top,
             right: draft.right,
@@ -154,7 +154,7 @@ PlasmaCore.Dialog {
         implicitWidth: 1920
         implicitHeight: 1080
 
-        Keys.onEscapePressed: marginEditor.close()
+        Keys.onEscapePressed: marginEditor.finish()
 
         Rectangle {
             z: -1
@@ -232,7 +232,7 @@ PlasmaCore.Dialog {
                     QQC2.Button {
                         icon.name: "dialog-ok"
                         text: i18n("Done")
-                        onClicked: marginEditor.close()
+                        onClicked: marginEditor.finish()
                     }
                 }
             }

@@ -1,7 +1,8 @@
 .pragma library
 
-// .desktop entry parser: pure text-to-values, no QML context, no i18n;
-// fallbacks are layered by callers on top of the raw values.
+// .desktop entries: text parsing with a per-engine cache, the batched read
+// command with its "==="-marked output, the visible-app filter and the drop
+// commands. No QML context, no i18n; fallbacks are layered by callers.
 
 .import "Paths.js" as Paths
 .import "Shell.js" as Shell
@@ -13,14 +14,14 @@ function parse(text, locale) {
     const lines = text.split("\n");
     let name = "";
     let nameFull = "";
-    let nameLang = "";
+    let nameLanguage = "";
     let icon = "";
     let type = "";
-    let locName = "";
-    let locLang = "";
+    let localeName = "";
+    let localeLanguage = "";
     if (locale && locale.name) {
-        locName = locale.name;
-        locLang = locName.split("_")[0];
+        localeName = locale.name;
+        localeLanguage = localeName.split("_")[0];
     }
     // only the [Desktop Entry] group describes the launcher; Name=/Icon=
     // under later headers ([Desktop Action ...]) belong to those actions
@@ -41,10 +42,10 @@ function parse(text, locale) {
         }
         if (line.startsWith("Type=")) {
             type = line.slice(5);
-        } else if (locName !== "" && line.startsWith("Name[" + locName + "]=")) {
-            nameFull = line.slice(7 + locName.length).trim();
-        } else if (locLang !== "" && line.startsWith("Name[" + locLang + "]=")) {
-            nameLang = line.slice(7 + locLang.length).trim();
+        } else if (localeName !== "" && line.startsWith("Name[" + localeName + "]=")) {
+            nameFull = line.slice(7 + localeName.length).trim();
+        } else if (localeLanguage !== "" && line.startsWith("Name[" + localeLanguage + "]=")) {
+            nameLanguage = line.slice(7 + localeLanguage.length).trim();
         } else if (line.startsWith("Name=")) {
             name = line.slice(5).trim();
         } else if (line.startsWith("Icon=")) {
@@ -52,16 +53,16 @@ function parse(text, locale) {
         }
     }
     return {
-        name: nameFull || nameLang || name,
+        name: nameFull || nameLanguage || name,
         icon: icon,
-        valid: !type || type === "Application"
+        isApplication: !type || type === "Application"
     };
 }
 
 // cache probe without touching the filesystem: lets AppInfo reapply a
 // previous parse synchronously after rebuilds and reordering; a .desktop
 // edited on disk keeps serving the old parse until the engine restarts
-function lookup(url) {
+function fromCache(url) {
     const key = url.toString();
     if (Object.prototype.hasOwnProperty.call(cache, key)) {
         return cache[key];
@@ -70,7 +71,7 @@ function lookup(url) {
 }
 
 function cachedParse(url, text, locale) {
-    const hit = lookup(url);
+    const hit = fromCache(url);
     if (hit !== undefined) {
         return hit;
     }
@@ -114,25 +115,25 @@ function parseCat(stdout) {
     return out;
 }
 
-// visible-launcher list for the composite and the popup: entries that
-// are still loading or known non-applications are dropped, fallback ones
-// (unreadable files degraded to their filename) stay; "name"/"nameDesc"
-// sort by display name, "file" keeps the model's file-name order
-function sortedVisible(list, mode) {
+// visible-app list for the composite and the popup: entries that are
+// still loading or known non-applications are dropped, unreadable ones
+// (degraded to their file name) stay; "name"/"nameDesc" sort by display
+// name, "file" keeps the file-name order
+function visibleApps(list, sortMode) {
     const out = [];
     for (let i = 0; i < list.length; ++i) {
         const item = list[i];
-        if (item && item.name !== "" && (item.valid || item.fallback)) {
+        if (item && item.name !== "" && (item.isApplication || item.unreadable)) {
             out.push(item);
         }
     }
-    if (mode !== "file") {
+    if (sortMode !== "file") {
         out.sort((a, b) => {
             const an = a.name.toLowerCase();
             const bn = b.name.toLowerCase();
             return an < bn ? -1 : an > bn ? 1 : 0;
         });
-        if (mode === "nameDesc") {
+        if (sortMode === "nameDesc") {
             out.reverse();
         }
     }
@@ -141,32 +142,32 @@ function sortedVisible(list, mode) {
 
 // kmimetypefinder gives the same verdict as Dolphin and the desktop;
 // it blocks on a fifo, hence [ -f ]
-function launcherTest(path) {
+function launcherCondition(path) {
     const quotedPath = Shell.quote(path);
     const detectedMime = "\"$(kmimetypefinder -- " + quotedPath + " 2>/dev/null)\"";
     return "[ -f " + quotedPath + " ] && [ " + detectedMime + " = application/x-desktop ]";
 }
 
 // the folder model lists the .desktop suffix only
-function moveCmd(urls, folderUrl) {
-    const direct = [];
-    const parts = [];
+function dropCmd(urls, folderUrl) {
+    const withSuffix = [];
+    const cmds = [];
     for (let i = 0; i < urls.length; ++i) {
         const u = urls[i].toString();
         if (!u.startsWith("file://")) {
             continue;
         }
         if (u.toLowerCase().endsWith(".desktop")) {
-            direct.push(Shell.quote(u));
+            withSuffix.push(Shell.quote(u));
         } else {
-            const target = folderUrl.replace(/\/+$/, "") + "/" + Paths.basename(u) + ".desktop";
-            const test = launcherTest(Paths.urlToPath(u));
-            const move = "kioclient mv " + Shell.quote(u) + " " + Shell.quote(target);
-            parts.push("if " + test + "; then " + move + "; fi");
+            const destUrl = folderUrl.replace(/\/+$/, "") + "/" + Paths.basename(u) + ".desktop";
+            const condition = launcherCondition(Paths.urlToPath(u));
+            const move = "kioclient mv " + Shell.quote(u) + " " + Shell.quote(destUrl);
+            cmds.push("if " + condition + "; then " + move + "; fi");
         }
     }
-    if (direct.length > 0) {
-        parts.unshift("kioclient mv " + direct.join(" ") + " " + Shell.quote(folderUrl));
+    if (withSuffix.length > 0) {
+        cmds.unshift("kioclient mv " + withSuffix.join(" ") + " " + Shell.quote(folderUrl));
     }
-    return parts.join("; ");
+    return cmds.join("; ");
 }

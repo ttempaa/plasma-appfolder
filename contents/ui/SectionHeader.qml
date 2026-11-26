@@ -11,7 +11,7 @@ ColumnLayout {
     id: header
 
     property string title
-    property string info: ""
+    property string note: ""
     property bool first: false
 
     Kirigami.FormData.isSection: true
@@ -35,7 +35,7 @@ ColumnLayout {
         }
 
         Kirigami.Icon {
-            visible: header.info !== ""
+            visible: header.note !== ""
             source: "help-whatsthis"
             color: Kirigami.Theme.textColor
             opacity: 0.6
@@ -47,8 +47,8 @@ ColumnLayout {
             id: noteHover
         }
 
-        QQC2.ToolTip.visible: noteHover.hovered && header.info !== ""
-        QQC2.ToolTip.text: header.info
+        QQC2.ToolTip.visible: noteHover.hovered && header.note !== ""
+        QQC2.ToolTip.text: header.note
     }
 
     Kirigami.Separator {

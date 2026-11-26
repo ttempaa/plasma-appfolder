@@ -23,15 +23,15 @@ Item {
     property int marginLeft: 0
 
     // defaults applied to newly added widgets
-    property int defIconSize: 64
-    property string defGridMode: "auto"
-    property int defGridMax: 3
-    property string defSortMode: "name"
-    property bool defShowFrame: true
-    property bool defOpenOnHover: false
+    property int defaultIconSize: 64
+    property string defaultGridMode: "auto"
+    property int defaultGridMax: 3
+    property string defaultSortMode: "name"
+    property bool defaultShowFrame: true
+    property bool defaultOpenOnHover: false
 
-    readonly property int screenW: Screen.width || 1920
-    readonly property int screenH: Screen.height || 1080
+    readonly property int screenWidth: Screen.width || 1920
+    readonly property int screenHeight: Screen.height || 1080
 
     // read synchronously at page creation: an async engine read would flash the defaults
     readonly property url configUrl: StandardPaths.writableLocation(StandardPaths.GenericDataLocation)
@@ -59,16 +59,16 @@ Item {
         marginRight = Number(generalSnapshot.value("marginRight", marginRight));
         marginBottom = Number(generalSnapshot.value("marginBottom", marginBottom));
         marginLeft = Number(generalSnapshot.value("marginLeft", marginLeft));
-        defIconSize = Number(defaultsSnapshot.value("iconSize", defIconSize));
-        defGridMode = defaultsSnapshot.value("gridMode", defGridMode) + "";
-        defGridMax = Number(defaultsSnapshot.value("gridMax", defGridMax));
-        defSortMode = defaultsSnapshot.value("sortMode", defSortMode) + "";
-        defShowFrame = strBool(defaultsSnapshot.value("showFrame", defShowFrame));
-        defOpenOnHover = strBool(defaultsSnapshot.value("openOnHover", defOpenOnHover));
+        defaultIconSize = Number(defaultsSnapshot.value("iconSize", defaultIconSize));
+        defaultGridMode = defaultsSnapshot.value("gridMode", defaultGridMode) + "";
+        defaultGridMax = Number(defaultsSnapshot.value("gridMax", defaultGridMax));
+        defaultSortMode = defaultsSnapshot.value("sortMode", defaultSortMode) + "";
+        defaultShowFrame = toBool(defaultsSnapshot.value("showFrame", defaultShowFrame));
+        defaultOpenOnHover = toBool(defaultsSnapshot.value("openOnHover", defaultOpenOnHover));
     }
 
     // INI booleans arrive as "true"/"false" strings
-    function strBool(v) {
+    function toBool(v) {
         if (v === true || v === "true") {
             return true;
         }
@@ -86,27 +86,27 @@ Item {
     }
 
     function writeAll() {
-        const m = {
+        const margins = {
             marginTop: marginTop,
             marginRight: marginRight,
             marginBottom: marginBottom,
             marginLeft: marginLeft
         };
-        const d = {
-            iconSize: defIconSize,
-            gridMode: defGridMode,
-            gridMax: defGridMax,
-            sortMode: defSortMode,
-            showFrame: defShowFrame,
-            openOnHover: defOpenOnHover
+        const defaults = {
+            iconSize: defaultIconSize,
+            gridMode: defaultGridMode,
+            gridMax: defaultGridMax,
+            sortMode: defaultSortMode,
+            showFrame: defaultShowFrame,
+            openOnHover: defaultOpenOnHover
         };
-        writeExec.connectSource(SharedConf.writeMarginsCmd(m)
-            + "; " + SharedConf.writeDefaultsCmd(d));
+        writeExec.connectSource(SharedConf.writeMarginsCmd(margins)
+            + "; " + SharedConf.writeDefaultsCmd(defaults));
     }
 
     // coalesce spinbox edits into one burst of writes
     Timer {
-        id: writeBack
+        id: writeTimer
 
         interval: 400
         onTriggered: configShared.writeAll()
@@ -114,18 +114,18 @@ Item {
 
     // flush a pending debounce on close, or quick edits die with the page
     Component.onDestruction: {
-        if (writeBack.active) {
+        if (writeTimer.active) {
             writeAll();
         }
     }
 
     function scheduleWrite() {
-        writeBack.restart();
+        writeTimer.restart();
     }
 
     function syncSizeBox() {
         for (let i = 0; i < defaultSizeBox.count; ++i) {
-            if (defaultSizeBox.model[i].value === defIconSize) {
+            if (defaultSizeBox.model[i].value === defaultIconSize) {
                 defaultSizeBox.currentIndex = i;
                 break;
             }
@@ -134,7 +134,7 @@ Item {
 
     function syncGridBox() {
         for (let i = 0; i < defaultGridBox.count; ++i) {
-            if (defaultGridBox.model[i].value === defGridMode) {
+            if (defaultGridBox.model[i].value === defaultGridMode) {
                 defaultGridBox.currentIndex = i;
                 break;
             }
@@ -142,9 +142,9 @@ Item {
     }
 
     function syncMaxGridBox() {
-        for (let i = 0; i < defaultMaxGridBox.count; ++i) {
-            if (defaultMaxGridBox.model[i].value === defGridMax) {
-                defaultMaxGridBox.currentIndex = i;
+        for (let i = 0; i < defaultGridMaxBox.count; ++i) {
+            if (defaultGridMaxBox.model[i].value === defaultGridMax) {
+                defaultGridMaxBox.currentIndex = i;
                 break;
             }
         }
@@ -152,7 +152,7 @@ Item {
 
     function syncSortBox() {
         for (let i = 0; i < defaultSortBox.count; ++i) {
-            if (defaultSortBox.model[i].value === defSortMode) {
+            if (defaultSortBox.model[i].value === defaultSortMode) {
                 defaultSortBox.currentIndex = i;
                 break;
             }
@@ -166,20 +166,20 @@ Item {
     onMarginRightChanged: rightSpin.value = marginRight
     onMarginBottomChanged: bottomSpin.value = marginBottom
     onMarginLeftChanged: leftSpin.value = marginLeft
-    onDefIconSizeChanged: syncSizeBox()
-    onDefGridModeChanged: syncGridBox()
-    onDefGridMaxChanged: syncMaxGridBox()
-    onDefSortModeChanged: syncSortBox()
-    onDefOpenOnHoverChanged: defOpenBox.currentIndex = defOpenOnHover ? 1 : 0
+    onDefaultIconSizeChanged: syncSizeBox()
+    onDefaultGridModeChanged: syncGridBox()
+    onDefaultGridMaxChanged: syncMaxGridBox()
+    onDefaultSortModeChanged: syncSortBox()
+    onDefaultOpenOnHoverChanged: defaultOpenOnHoverBox.currentIndex = defaultOpenOnHover ? 1 : 0
 
     function openMarginEditor() {
-        marginEditor.edgeMargins = {
+        marginEditor.screenMargins = {
             top: marginTop,
             right: marginRight,
             bottom: marginBottom,
             left: marginLeft
         };
-        marginEditor.open(screenW, screenH);
+        marginEditor.open(screenWidth, screenHeight);
     }
 
     QQC2.ScrollView {
@@ -197,7 +197,7 @@ Item {
                 SectionHeader {
                     title: i18n("Screen margins")
                     first: true
-                    info: i18n("Shared by all app folder widgets; applied immediately.")
+                    note: i18n("Shared by all app folder widgets; applied immediately.")
                 }
 
                 QQC2.SpinBox {
@@ -289,7 +289,7 @@ Item {
 
                 SectionHeader {
                     title: i18n("New widgets")
-                    info: i18n("Every widget you add to the desktop starts with these settings. Existing widgets are not changed.")
+                    note: i18n("Every widget you add to the desktop starts with these settings. Existing widgets are not changed.")
                 }
 
                 QQC2.ComboBox {
@@ -308,7 +308,7 @@ Item {
                         { text: i18n("Maximum (256 px)"), value: 256 }
                     ]
                     onActivated: index => {
-                        defIconSize = model[index].value;
+                        defaultIconSize = model[index].value;
                         scheduleWrite();
                     }
                     Component.onCompleted: configShared.syncSizeBox()
@@ -329,7 +329,7 @@ Item {
                         { text: "4×4", value: "4" }
                     ]
                     onActivated: index => {
-                        defGridMode = model[index].value;
+                        defaultGridMode = model[index].value;
                         scheduleWrite();
                     }
                     Component.onCompleted: configShared.syncGridBox()
@@ -338,11 +338,11 @@ Item {
                 }
 
                 QQC2.ComboBox {
-                    id: defaultMaxGridBox
+                    id: defaultGridMaxBox
 
                     hoverEnabled: true
                     Kirigami.FormData.label: i18n("Max:")
-                    visible: defGridMode === "auto"
+                    visible: defaultGridMode === "auto"
                     textRole: "text"
                     model: [
                         { text: "2×2", value: 2 },
@@ -350,7 +350,7 @@ Item {
                         { text: "4×4", value: 4 }
                     ]
                     onActivated: index => {
-                        defGridMax = model[index].value;
+                        defaultGridMax = model[index].value;
                         scheduleWrite();
                     }
                     Component.onCompleted: configShared.syncMaxGridBox()
@@ -370,7 +370,7 @@ Item {
                         { text: i18n("File name"), value: "file" }
                     ]
                     onActivated: index => {
-                        defSortMode = model[index].value;
+                        defaultSortMode = model[index].value;
                         scheduleWrite();
                     }
                     Component.onCompleted: configShared.syncSortBox()
@@ -382,15 +382,15 @@ Item {
                     hoverEnabled: true
                     Kirigami.FormData.label: i18n("Frame:")
                     text: i18n("Around the icons")
-                    checked: defShowFrame
+                    checked: defaultShowFrame
                     onToggled: {
-                        defShowFrame = checked;
+                        defaultShowFrame = checked;
                         scheduleWrite();
                     }
                 }
 
                 QQC2.ComboBox {
-                    id: defOpenBox
+                    id: defaultOpenOnHoverBox
 
                     hoverEnabled: true
                     Kirigami.FormData.label: i18n("Open:")
@@ -400,10 +400,10 @@ Item {
                         { text: i18n("Hover"), value: true }
                     ]
                     onActivated: index => {
-                        defOpenOnHover = model[index].value;
+                        defaultOpenOnHover = model[index].value;
                         scheduleWrite();
                     }
-                    Component.onCompleted: currentIndex = defOpenOnHover ? 1 : 0
+                    Component.onCompleted: currentIndex = defaultOpenOnHover ? 1 : 0
                     QQC2.ToolTip.text: i18n("Whether the popup opens on click or on hover.")
                     QQC2.ToolTip.visible: hovered
                 }
@@ -414,11 +414,11 @@ Item {
     MarginEditor {
         id: marginEditor
 
-        onAccepted: m => {
-            configShared.marginTop = m.top;
-            configShared.marginRight = m.right;
-            configShared.marginBottom = m.bottom;
-            configShared.marginLeft = m.left;
+        onAccepted: screenMargins => {
+            configShared.marginTop = screenMargins.top;
+            configShared.marginRight = screenMargins.right;
+            configShared.marginBottom = screenMargins.bottom;
+            configShared.marginLeft = screenMargins.left;
             writeAll();
         }
     }

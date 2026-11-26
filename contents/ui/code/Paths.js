@@ -1,7 +1,7 @@
 .pragma library
 
 // decodeURIComponent throws on a literal '%'; the raw string is the best guess
-function safeDecode(s) {
+function percentDecode(s) {
     try {
         return decodeURIComponent(s);
     } catch (e) {
@@ -11,7 +11,7 @@ function safeDecode(s) {
 
 function urlToPath(u) {
     const s = u.toString();
-    return s.startsWith("file://") ? safeDecode(s.slice(7)) : s;
+    return s.startsWith("file://") ? percentDecode(s.slice(7)) : s;
 }
 
 function pathToUrl(p) {

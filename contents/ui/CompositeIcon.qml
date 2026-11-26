@@ -17,7 +17,7 @@ Item {
     height: cellPx
 
     // icon size solves to a stock pixmap size (icons render 1:1), spacing flexes to absorb the rest
-    readonly property var geom: Icons.compositeGeometry(width, cols, showFrame)
+    readonly property var geometry: Icons.compositeGeometry(width, cols, showFrame)
 
     Rectangle {
         anchors.fill: parent
@@ -32,18 +32,18 @@ Item {
     // empty state: ghost squares where the mini-icons will appear once launchers are added
     Grid {
         anchors.fill: parent
-        anchors.margins: comp.geom.inset
+        anchors.margins: comp.geometry.inset
         columns: comp.cols
-        columnSpacing: comp.geom.gap
-        rowSpacing: comp.geom.gap
+        columnSpacing: comp.geometry.gap
+        rowSpacing: comp.geometry.gap
         visible: comp.count === 0
 
         Repeater {
             model: comp.cols * comp.cols
 
             Rectangle {
-                width: comp.geom.size
-                height: comp.geom.size
+                width: comp.geometry.size
+                height: comp.geometry.size
                 radius: Math.round(width * 0.22)
                 color: Kirigami.Theme.textColor
                 opacity: 0.2
@@ -54,18 +54,18 @@ Item {
     Grid {
         // deliberate grid spacing: breeze icons carry baked-in transparent margins, zero gap would read as seams
         anchors.fill: parent
-        anchors.margins: comp.geom.inset
+        anchors.margins: comp.geometry.inset
         columns: comp.cols
-        columnSpacing: comp.geom.gap
-        rowSpacing: comp.geom.gap
+        columnSpacing: comp.geometry.gap
+        rowSpacing: comp.geometry.gap
         visible: comp.count > 0
 
         Repeater {
             model: Math.min(comp.count, comp.cols * comp.cols)
 
             Kirigami.Icon {
-                width: comp.geom.size
-                height: comp.geom.size
+                width: comp.geometry.size
+                height: comp.geometry.size
                 source: comp.icons[index] || ""
             }
         }

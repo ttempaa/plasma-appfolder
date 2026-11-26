@@ -141,7 +141,7 @@ Item {
                 }
 
                 QQC2.ComboBox {
-                    id: maxGridBox
+                    id: gridMaxBox
 
                     hoverEnabled: true
                     Kirigami.FormData.label: i18n("Max:")

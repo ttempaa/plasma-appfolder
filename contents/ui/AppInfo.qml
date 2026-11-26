@@ -10,20 +10,20 @@ QtObject {
     property string name
     property string icon
     // false for .desktop entries that are not applications (Type=Link etc.)
-    property bool valid
-    // the file could not be read: stays visible with the filename fallback instead of hiding as invalid
-    property bool fallback
+    property bool isApplication
+    // the file could not be read: stays visible under its file name instead of hiding
+    property bool unreadable
     property bool dead
 
     // resolves from the parse cache when possible; returns false when the
     // file still needs reading — the owner feeds the text back via
-    // applyText()/applyFallback(), files are read in one batch
-    function load() {
+    // applyText()/applyFileName(), files are read in one batch
+    function restoreFromCache() {
         name = "";
         icon = "";
-        valid = false;
-        fallback = false;
-        const cached = DesktopFile.lookup(info.source.toString());
+        isApplication = false;
+        unreadable = false;
+        const cached = DesktopFile.fromCache(info.source.toString());
         if (cached !== undefined) {
             apply(cached);
             return true;
@@ -36,8 +36,8 @@ QtObject {
     }
 
     function apply(parsed) {
-        valid = parsed.valid;
-        if (parsed.valid) {
+        isApplication = parsed.isApplication;
+        if (parsed.isApplication) {
             name = parsed.name || i18n("Unknown");
             icon = parsed.icon || "application-x-desktop";
         } else {
@@ -46,11 +46,11 @@ QtObject {
         }
     }
 
-    function applyFallback() {
+    function applyFileName() {
         const raw = info.source.toString();
-        const base = Paths.safeDecode(raw.slice(raw.lastIndexOf("/") + 1).replace(/\.desktop$/i, ""));
+        const base = Paths.percentDecode(Paths.basename(raw).replace(/\.desktop$/i, ""));
         name = base;
         icon = base;
-        fallback = true;
+        unreadable = true;
     }
 }

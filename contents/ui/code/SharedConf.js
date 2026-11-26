@@ -5,7 +5,7 @@
 var DATA_DIR = "plasma-appfolder";
 var FILE = "appfolder.conf";
 var GROUP = "General";
-var KEYS = ["marginTop", "marginRight", "marginBottom", "marginLeft"];
+var MARGIN_KEYS = ["marginTop", "marginRight", "marginBottom", "marginLeft"];
 var DEFAULTS_GROUP = "Defaults";
 var DEFAULTS_KEYS = ["iconSize", "gridMode", "gridMax", "sortMode", "showFrame", "openOnHover"];
 // must mirror the <default> entries of these keys in contents/config/main.xml
@@ -22,61 +22,59 @@ var MAX_MARGIN = 500;
 
 // returns normalized margins (0 for absent keys), parsed shared defaults
 // and the flags, or null when unparsable
-function _normalize(raw) {
+function normalize(raw) {
     var vals = {};
-    for (var i = 0; i < KEYS.length; ++i) {
-        var s = raw[KEYS[i]];
+    for (var i = 0; i < MARGIN_KEYS.length; ++i) {
+        var s = raw[MARGIN_KEYS[i]];
         if (s === undefined || s === "") {
-            vals[KEYS[i]] = 0;
+            vals[MARGIN_KEYS[i]] = 0;
             continue;
         }
         var n = parseInt(s, 10);
         if (isNaN(n)) {
             return null;
         }
-        vals[KEYS[i]] = Math.max(0, n);
+        vals[MARGIN_KEYS[i]] = Math.max(0, n);
     }
     var gridModes = ["auto", "2", "3", "4"];
     var sortModes = ["name", "nameDesc", "file"];
     var bools = ["true", "false"];
-    vals.__anyDefault = false;
-    vals.__defaultsConfigured = raw.__configured === "true";
-    vals.dIconSize = null;
-    vals.dGridMode = null;
-    vals.dGridMax = null;
-    vals.dSortMode = null;
-    vals.dShowFrame = null;
-    vals.dOpenOnHover = null;
-    var size = parseInt(raw.dIconSize, 10);
+    vals.hasDefaults = false;
+    vals.defaultsConfigured = raw.configured === "true";
+    vals.defaults = {};
+    for (var j = 0; j < DEFAULTS_KEYS.length; ++j) {
+        vals.defaults[DEFAULTS_KEYS[j]] = null;
+    }
+    var size = parseInt(raw.iconSize, 10);
     if (!isNaN(size) && size >= 8) {
-        vals.dIconSize = size;
-        vals.__anyDefault = true;
+        vals.defaults.iconSize = size;
+        vals.hasDefaults = true;
     }
-    if (gridModes.indexOf(raw.dGridMode) !== -1) {
-        vals.dGridMode = raw.dGridMode;
-        vals.__anyDefault = true;
+    if (gridModes.indexOf(raw.gridMode) !== -1) {
+        vals.defaults.gridMode = raw.gridMode;
+        vals.hasDefaults = true;
     }
-    var gridMax = parseInt(raw.dGridMax, 10);
+    var gridMax = parseInt(raw.gridMax, 10);
     if (!isNaN(gridMax) && gridMax >= 2 && gridMax <= 4) {
-        vals.dGridMax = gridMax;
-        vals.__anyDefault = true;
+        vals.defaults.gridMax = gridMax;
+        vals.hasDefaults = true;
     }
-    if (sortModes.indexOf(raw.dSortMode) !== -1) {
-        vals.dSortMode = raw.dSortMode;
-        vals.__anyDefault = true;
+    if (sortModes.indexOf(raw.sortMode) !== -1) {
+        vals.defaults.sortMode = raw.sortMode;
+        vals.hasDefaults = true;
     }
-    if (bools.indexOf(raw.dShowFrame) !== -1) {
-        vals.dShowFrame = (raw.dShowFrame === "true");
-        vals.__anyDefault = true;
+    if (bools.indexOf(raw.showFrame) !== -1) {
+        vals.defaults.showFrame = (raw.showFrame === "true");
+        vals.hasDefaults = true;
     }
-    if (bools.indexOf(raw.dOpenOnHover) !== -1) {
-        vals.dOpenOnHover = (raw.dOpenOnHover === "true");
-        vals.__anyDefault = true;
+    if (bools.indexOf(raw.openOnHover) !== -1) {
+        vals.defaults.openOnHover = (raw.openOnHover === "true");
+        vals.hasDefaults = true;
     }
     return vals;
 }
 
-function dataHome() {
+function quotedDataDir() {
     // shell expression, expanded when the command runs
     return "\"${XDG_DATA_HOME:-$HOME/.local/share}/" + DATA_DIR + "\"";
 }
@@ -84,14 +82,14 @@ function dataHome() {
 // one cat spawn reads the whole file, the INI is parsed in JS; writes
 // shell out to kwriteconfig6
 function readAllCmd() {
-    return "cat " + dataHome() + "/" + FILE;
+    return "cat " + quotedDataDir() + "/" + FILE;
 }
 
 // creates the data dir and a fresh "applications[-N]" folder and prints
 // its path on stdout, then the desktop containment's icon-size index from
 // the appletsrc — to size a fresh widget like the desktop
 function managedFolderCmd() {
-    return "d=" + dataHome() + "; mkdir -p \"$d\"; n=applications; i=1;"
+    return "d=" + quotedDataDir() + "; mkdir -p \"$d\"; n=applications; i=1;"
         + " while [ -e \"$d/$n\" ]; do i=$((i+1)); n=applications-$i; done;"
         + " mkdir \"$d/$n\" && printf '%s\\n' \"$d/$n\";"
         + " awk '/^\\[Containments\\]\\[[0-9]+\\]$/{c=$0;f=0}"
@@ -101,7 +99,7 @@ function managedFolderCmd() {
         + " \"${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc\" 2>/dev/null | head -1";
 }
 
-// raw: { marginTop: "25"|undefined, dIconSize: "96"|undefined, ... };
+// raw: { marginTop: "25"|undefined, iconSize: "96"|undefined, ... };
 // keys outside the two known groups are ignored, comments included
 function parseIni(text) {
     var raw = {};
@@ -123,33 +121,33 @@ function parseIni(text) {
         }
         var k = line.slice(0, eq).trim();
         var v = line.slice(eq + 1).trim();
-        if (group === GROUP && KEYS.indexOf(k) !== -1) {
+        if (group === GROUP && MARGIN_KEYS.indexOf(k) !== -1) {
             raw[k] = v;
         } else if (group === DEFAULTS_GROUP && k === "configured") {
-            raw.__configured = v;
+            raw.configured = v;
         } else if (group === DEFAULTS_GROUP && DEFAULTS_KEYS.indexOf(k) !== -1) {
-            raw["d" + k.charAt(0).toUpperCase() + k.slice(1)] = v;
+            raw[k] = v;
         }
     }
     return raw;
 }
 
 function parseAll(stdout) {
-    return _normalize(parseIni(stdout));
+    return normalize(parseIni(stdout));
 }
 
-function writeMarginsCmd(vals) {
+function writeMarginsCmd(margins) {
     var parts = [];
-    for (var i = 0; i < KEYS.length; ++i) {
-        parts.push("kwriteconfig6 --file " + dataHome() + "/" + FILE + " --group " + GROUP
-            + " --key " + KEYS[i] + " " + vals[KEYS[i]]);
+    for (var i = 0; i < MARGIN_KEYS.length; ++i) {
+        parts.push("kwriteconfig6 --file " + quotedDataDir() + "/" + FILE + " --group " + GROUP
+            + " --key " + MARGIN_KEYS[i] + " " + margins[MARGIN_KEYS[i]]);
     }
     return parts.join("; ");
 }
 
-// d = { iconSize, gridMode, gridMax, sortMode, showFrame, openOnHover } — all plain values
-function writeDefaultsCmd(d) {
-    var f = dataHome() + "/" + FILE;
+// defaults = { iconSize, gridMode, gridMax, sortMode, showFrame, openOnHover } — all plain values
+function writeDefaultsCmd(defaults) {
+    var f = quotedDataDir() + "/" + FILE;
     var parts = [
         // tombstone: once shared defaults are saved, the desktop-size detection for new widgets stays off
         "kwriteconfig6 --file " + f + " --group " + DEFAULTS_GROUP
@@ -158,7 +156,10 @@ function writeDefaultsCmd(d) {
     // the file holds only intentional deviations: a key matching the built-in default is deleted, not written
     for (var i = 0; i < DEFAULTS_KEYS.length; ++i) {
         var k = DEFAULTS_KEYS[i];
-        var val = (typeof d[k] === "boolean") ? (d[k] ? "true" : "false") : d[k];
+        var val = defaults[k];
+        if (typeof val === "boolean") {
+            val = val ? "true" : "false";
+        }
         if (String(val) === String(BASE_DEFAULTS[k])) {
             parts.push("kwriteconfig6 --file " + f + " --group " + DEFAULTS_GROUP
                 + " --key " + k + " --delete");

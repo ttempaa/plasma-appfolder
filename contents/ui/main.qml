@@ -43,12 +43,12 @@ PlasmoidItem {
         if (!raw) {
             return i18n("Not configured");
         }
-        return Paths.safeDecode(Paths.basename(raw));
+        return Paths.percentDecode(Paths.basename(raw));
     }
 
-    property var appInfos: []
+    property var apps: []
     // plain property updated by syncVisibleApps(), deliberately not a binding:
-    // name/valid inside AppInfo arrive asynchronously, and a var array would
+    // name/isApplication inside AppInfo arrive asynchronously, and a var array would
     // not propagate those deep changes to anything bound to it
     property var visibleApps: []
 
@@ -56,8 +56,8 @@ PlasmoidItem {
         // reuse by url: survivors keep their parsed state untouched, only
         // genuinely new files cost a read (usually a synchronous cache hit)
         const byUrl = {};
-        for (let i = 0; i < appInfos.length; ++i) {
-            byUrl[appInfos[i].source.toString()] = appInfos[i];
+        for (let i = 0; i < apps.length; ++i) {
+            byUrl[apps[i].source.toString()] = apps[i];
         }
         const fresh = [];
         for (let i = 0; i < folderModel.count; ++i) {
@@ -69,12 +69,12 @@ PlasmoidItem {
             } else {
                 const info = appInfoComponent.createObject(root, { source: url });
                 fresh.push(info);
-                if (!info.load()) {
+                if (!info.restoreFromCache()) {
                     requestText(info);
                 }
             }
         }
-        appInfos = fresh;
+        apps = fresh;
         const gone = Object.keys(byUrl);
         for (let i = 0; i < gone.length; ++i) {
             byUrl[gone[i]].dead = true;
@@ -100,7 +100,10 @@ PlasmoidItem {
         id: visibleAppsTimer
 
         interval: 50
-        onTriggered: root.visibleApps = DesktopFile.sortedVisible(root.appInfos, Plasmoid.configuration.sortMode || "name")
+        onTriggered: {
+            const sortMode = Plasmoid.configuration.sortMode || "name";
+            root.visibleApps = DesktopFile.visibleApps(root.apps, sortMode);
+        }
     }
 
     // .desktop reads are batched: every file that missed the parse cache is
@@ -167,7 +170,7 @@ PlasmoidItem {
                 }
                 const text = records[path];
                 if (text === undefined || text === "") {
-                    info.applyFallback();
+                    info.applyFileName();
                 } else {
                     info.applyText(text);
                 }
@@ -204,7 +207,7 @@ PlasmoidItem {
 
         AppInfo {
             onNameChanged: root.syncVisibleApps()
-            onValidChanged: root.syncVisibleApps()
+            onIsApplicationChanged: root.syncVisibleApps()
         }
     }
 
@@ -227,7 +230,7 @@ PlasmoidItem {
 
     // screen margins are shared by every instance, not per-widget settings
     QtObject {
-        id: sharedCfg
+        id: sharedConfig
 
         property int marginTop: 0
         property int marginRight: 0
@@ -245,7 +248,7 @@ PlasmoidItem {
             configExec.connectSource(SharedConf.readAllCmd());
         }
 
-        function onRead(stdout) {
+        function applyConfig(stdout) {
             reading = false;
             const vals = SharedConf.parseAll(stdout);
             if (vals) {
@@ -258,8 +261,8 @@ PlasmoidItem {
             marginRight = vals.marginRight;
             marginBottom = vals.marginBottom;
             marginLeft = vals.marginLeft;
-            sharedDefaultsConfigured = vals.__defaultsConfigured;
-            maybeApplyDefaults(vals);
+            sharedDefaultsConfigured = vals.defaultsConfigured;
+            applyDefaultsOnce(vals);
             // strictly after the shared defaults settled, so an explicit
             // shared value always wins over the desktop-size detection
             ensureManagedFolder();
@@ -268,7 +271,7 @@ PlasmoidItem {
         // one-time per instance: a widget that was never touched (every key
         // still at its schema default) picks up the shared defaults for
         // new widgets; anything the user configured wins
-        function maybeApplyDefaults(vals) {
+        function applyDefaultsOnce(vals) {
             if (Plasmoid.configuration.defaultsApplied) {
                 return;
             }
@@ -305,26 +308,26 @@ PlasmoidItem {
                     break;
                 }
             }
-            if (!untouched || !vals.__anyDefault) {
+            if (!untouched || !vals.hasDefaults) {
                 return;
             }
-            if (vals.dIconSize !== null) {
-                Plasmoid.configuration.iconSize = vals.dIconSize;
+            if (vals.defaults.iconSize !== null) {
+                Plasmoid.configuration.iconSize = vals.defaults.iconSize;
             }
-            if (vals.dGridMode !== null) {
-                Plasmoid.configuration.gridMode = vals.dGridMode;
+            if (vals.defaults.gridMode !== null) {
+                Plasmoid.configuration.gridMode = vals.defaults.gridMode;
             }
-            if (vals.dGridMax !== null) {
-                Plasmoid.configuration.gridMax = vals.dGridMax;
+            if (vals.defaults.gridMax !== null) {
+                Plasmoid.configuration.gridMax = vals.defaults.gridMax;
             }
-            if (vals.dSortMode !== null) {
-                Plasmoid.configuration.sortMode = vals.dSortMode;
+            if (vals.defaults.sortMode !== null) {
+                Plasmoid.configuration.sortMode = vals.defaults.sortMode;
             }
-            if (vals.dShowFrame !== null) {
-                Plasmoid.configuration.showFrame = vals.dShowFrame;
+            if (vals.defaults.showFrame !== null) {
+                Plasmoid.configuration.showFrame = vals.defaults.showFrame;
             }
-            if (vals.dOpenOnHover !== null) {
-                Plasmoid.configuration.openOnHover = vals.dOpenOnHover;
+            if (vals.defaults.openOnHover !== null) {
+                Plasmoid.configuration.openOnHover = vals.defaults.openOnHover;
             }
         }
     }
@@ -338,18 +341,18 @@ PlasmoidItem {
         engine: "executable"
         onNewData: (sourceName, data) => {
             configExec.disconnectSource(sourceName);
-            sharedCfg.onRead(((data["stdout"] ?? "") + ""));
+            sharedConfig.applyConfig(((data["stdout"] ?? "") + ""));
         }
     }
 
 
-    Component.onCompleted: sharedCfg.refresh()
+    Component.onCompleted: sharedConfig.refresh()
 
-    readonly property var popupMargins: ({
-        top: sharedCfg.marginTop,
-        right: sharedCfg.marginRight,
-        bottom: sharedCfg.marginBottom,
-        left: sharedCfg.marginLeft
+    readonly property var screenMargins: ({
+        top: sharedConfig.marginTop,
+        right: sharedConfig.marginRight,
+        bottom: sharedConfig.marginBottom,
+        left: sharedConfig.marginLeft
     })
 
     FontMetrics {
@@ -395,7 +398,7 @@ PlasmoidItem {
     }
 
     Plasma5Support.DataSource {
-        id: exec
+        id: actionExec
 
         engine: "executable"
 
@@ -414,9 +417,9 @@ PlasmoidItem {
         keys: ["text/uri-list"]
 
         onDropped: (drop) => {
-            const cmd = DesktopFile.moveCmd(drop.urls, root.folderUrl.toString());
+            const cmd = DesktopFile.dropCmd(drop.urls, root.folderUrl.toString());
             if (cmd !== "") {
-                exec.connectSource(cmd);
+                actionExec.connectSource(cmd);
             }
         }
 
@@ -434,7 +437,7 @@ PlasmoidItem {
         if (!info || info.source.toString() === "") {
             return;
         }
-        exec.connectSource("kioclient exec " + Shell.quote(info.source.toString()));
+        actionExec.connectSource("kioclient exec " + Shell.quote(info.source.toString()));
         popup.visible = false;
     }
 
@@ -443,7 +446,7 @@ PlasmoidItem {
         if (url === "") {
             return;
         }
-        exec.connectSource("kioclient exec " + Shell.quote(url));
+        actionExec.connectSource("kioclient exec " + Shell.quote(url));
     }
 
     Plasma5Support.DataSource {
@@ -510,14 +513,14 @@ PlasmoidItem {
         const p = root.mapToItem(win.contentItem, 0, 0);
         const needH = popup.contentImplicitHeight;
         const needW = popup.contentImplicitWidth;
-        const m = root.popupMargins;
-        const waW = Math.max(1, win.width - m.left - m.right);
-        const waH = Math.max(1, win.height - m.top - m.bottom);
+        const margins = root.screenMargins;
+        const waW = Math.max(1, win.width - margins.left - margins.right);
+        const waH = Math.max(1, win.height - margins.top - margins.bottom);
 
-        const dUp = p.y - m.top;
-        const dDown = (m.top + waH) - (p.y + root.height);
-        const dLeft = p.x - m.left;
-        const dRight = (m.left + waW) - (p.x + root.width);
+        const dUp = p.y - margins.top;
+        const dDown = (margins.top + waH) - (p.y + root.height);
+        const dLeft = p.x - margins.left;
+        const dRight = (margins.left + waW) - (p.x + root.width);
 
         const fitsSide = side => {
             if (side === "up") {
@@ -532,16 +535,16 @@ PlasmoidItem {
             return dRight >= needW;
         };
 
-        // distances as work-area fractions, so a wide screen does not give
+        // free space as work-area fractions, so a wide screen does not give
         // the horizontal sides an unfair advantage
-        const nTop = dUp / waH;
-        const nBottom = dDown / waH;
-        const nLeft = dLeft / waW;
-        const nRight = dRight / waW;
+        const freeUp = dUp / waH;
+        const freeDown = dDown / waH;
+        const freeLeft = dLeft / waW;
+        const freeRight = dRight / waW;
 
         const prefSide = Plasmoid.configuration.autoPreference || "up";
-        const strength = Math.max(0, Plasmoid.configuration.autoBias || 0) / 100;
-        let side = Placement.pickSide(nTop, nBottom, nLeft, nRight, prefSide, strength);
+        const tolerance = Math.max(0, Plasmoid.configuration.autoBias || 0) / 100;
+        let side = Placement.pickSide(freeUp, freeDown, freeLeft, freeRight, prefSide, tolerance);
 
         const opposite = { up: "down", down: "up", left: "right", right: "left" };
         if (!fitsSide(side) && fitsSide(opposite[side])) {
@@ -571,10 +574,10 @@ PlasmoidItem {
         const ph = popup.height > 0 ? popup.height : popup.contentImplicitHeight;
         const p = root.mapToItem(win.contentItem, 0, 0);
 
-        const rect = Placement.popupRect(side,
+        const pos = Placement.popupPosition(side,
             { x: p.x, y: p.y, width: root.width, height: root.height },
             { width: pw, height: ph },
-            root.popupMargins,
+            root.screenMargins,
             gap,
             { width: win.width, height: win.height });
 
@@ -584,12 +587,12 @@ PlasmoidItem {
             left: PlasmaCore.Types.RightEdge,
             right: PlasmaCore.Types.LeftEdge
         })[side];
-        popup.x = rect.x;
-        popup.y = rect.y;
+        popup.x = pos.x;
+        popup.y = pos.y;
     }
 
     function openPopup() {
-        sharedCfg.refresh();
+        sharedConfig.refresh();
         placePopup();
         popup.visible = true;
     }
@@ -597,13 +600,13 @@ PlasmoidItem {
     AppFolderPopup {
         id: popup
 
-        appInfos: root.visibleApps
+        apps: root.visibleApps
         cellPx: root.cellSize + Kirigami.Units.gridUnit * 2
         cols: root.gridCols
         maxVisibleRows: 5
 
         onLaunched: info => root.launch(info)
-        onHoverChanged: hovered => hovered ? popupCloseTimer.stop() : popupCloseTimer.restart()
+        onHovered: hovered => hovered ? popupCloseTimer.stop() : popupCloseTimer.restart()
 
         // reposition when the size settles: the first show lays the content out late
         onWidthChanged: if (visible) root.placePopup()
