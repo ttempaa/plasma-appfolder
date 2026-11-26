@@ -3,6 +3,7 @@
 // .desktop entry parser: pure text-to-values, no QML context, no i18n;
 // fallbacks are layered by callers on top of the raw values.
 
+.import "Paths.js" as Paths
 .import "Shell.js" as Shell
 
 // url -> last parse result, shared for the engine's lifetime
@@ -136,4 +137,36 @@ function sortedVisible(list, mode) {
         }
     }
     return out;
+}
+
+// kmimetypefinder gives the same verdict as Dolphin and the desktop;
+// it blocks on a fifo, hence [ -f ]
+function launcherTest(path) {
+    const quotedPath = Shell.quote(path);
+    const detectedMime = "\"$(kmimetypefinder -- " + quotedPath + " 2>/dev/null)\"";
+    return "[ -f " + quotedPath + " ] && [ " + detectedMime + " = application/x-desktop ]";
+}
+
+// the folder model lists the .desktop suffix only
+function moveCmd(urls, folderUrl) {
+    const direct = [];
+    const parts = [];
+    for (let i = 0; i < urls.length; ++i) {
+        const u = urls[i].toString();
+        if (!u.startsWith("file://")) {
+            continue;
+        }
+        if (u.toLowerCase().endsWith(".desktop")) {
+            direct.push(Shell.quote(u));
+        } else {
+            const target = folderUrl.replace(/\/+$/, "") + "/" + Paths.basename(u) + ".desktop";
+            const test = launcherTest(Paths.urlToPath(u));
+            const move = "kioclient mv " + Shell.quote(u) + " " + Shell.quote(target);
+            parts.push("if " + test + "; then " + move + "; fi");
+        }
+    }
+    if (direct.length > 0) {
+        parts.unshift("kioclient mv " + direct.join(" ") + " " + Shell.quote(folderUrl));
+    }
+    return parts.join("; ");
 }

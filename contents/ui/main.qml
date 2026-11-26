@@ -404,8 +404,8 @@ PlasmoidItem {
         }
     }
 
-    // dropping .desktop launchers onto the widget moves them into its
-    // folder; the folder model picks the change up on its own
+    // launchers dropped onto the widget move into its folder;
+    // the folder model picks the change up on its own
     DropArea {
         id: dropArea
 
@@ -414,15 +414,9 @@ PlasmoidItem {
         keys: ["text/uri-list"]
 
         onDropped: (drop) => {
-            const sources = [];
-            for (let i = 0; i < drop.urls.length; ++i) {
-                const u = drop.urls[i].toString();
-                if (u.startsWith("file://") && u.toLowerCase().endsWith(".desktop")) {
-                    sources.push(Shell.quote(u));
-                }
-            }
-            if (sources.length > 0) {
-                exec.connectSource("kioclient mv " + sources.join(" ") + " " + Shell.quote(root.folderUrl.toString()));
+            const cmd = DesktopFile.moveCmd(drop.urls, root.folderUrl.toString());
+            if (cmd !== "") {
+                exec.connectSource(cmd);
             }
         }
 
