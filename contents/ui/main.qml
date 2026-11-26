@@ -97,10 +97,6 @@ PlasmoidItem {
         }
     }
 
-    // .desktop reads are batched: every file of the folder is
-    // dumped by one cat process — QML itself cannot read local files (the
-    // XHR file scheme needs QML_XHR_ALLOW_FILE_READ), the executable engine
-    // has no such restriction
     property var pendingInfos: []
     property var batchByCmd: ({})
 
@@ -132,7 +128,7 @@ PlasmoidItem {
         if (paths.length === 0) {
             return;
         }
-        const cmd = DesktopFile.catCmd(paths);
+        const cmd = DesktopFile.readCmd(paths);
         // identical commands merge: the engine keys responses by command
         if (batchByCmd[cmd]) {
             Object.assign(batchByCmd[cmd], byPath);
@@ -142,6 +138,8 @@ PlasmoidItem {
         fileExec.connectSource(cmd);
     }
 
+    // QML cannot read local files itself (XHR needs QML_XHR_ALLOW_FILE_READ),
+    // a shell command can
     Plasma5Support.DataSource {
         id: fileExec
 
@@ -153,7 +151,7 @@ PlasmoidItem {
             if (!byPath) {
                 return;
             }
-            const records = DesktopFile.parseCat((data["stdout"] ?? "") + "");
+            const records = DesktopFile.parseReadOutput(data["stdout"]);
             for (const path in byPath) {
                 const info = byPath[path];
                 if (info.dead) {

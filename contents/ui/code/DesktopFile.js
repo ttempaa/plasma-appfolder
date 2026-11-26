@@ -52,22 +52,25 @@ function parse(text, locale) {
     };
 }
 
-// one shell command that dumps every file with a ===<path> marker line
-// before each — a single process for the whole folder; keys in .desktop
-// syntax cannot start with "=", so a marker line is unambiguous
-// [ -f ]: the model lists symlinks to fifos, cat would hang on them
-function catCmd(paths) {
-    const parts = [];
-    for (let i = 0; i < paths.length; ++i) {
-        const quoted = Shell.quote(paths[i]);
-        parts.push("printf '\\n===%s\\n' " + quoted);
-        parts.push("[ -f " + quoted + " ] && cat " + quoted);
-    }
-    return parts.join("; ");
+// one command that dumps every file behind a ===<path> marker line; keys
+// in .desktop syntax cannot start with "=", so a marker line is unambiguous
+// -type f: the model lists symlinks to fifos, awk would hang on them
+function readCmd(paths) {
+    const list = paths.map(p => Shell.quote(p)).join(" ");
+    // gawk stops at a command-line file it cannot open, so the files are read from the program
+    const program = `BEGIN {
+        for (i = 1; i < ARGC; ++i) {
+            print ""
+            print "===" ARGV[i]
+            while ((getline line < ARGV[i]) > 0) print line
+            close(ARGV[i])
+        }
+    }`;
+    return `find -L ${list} -maxdepth 0 -type f -exec awk ${Shell.quote(program)} {} +`;
 }
 
-// stdout of catCmd -> { path: text }; records without content mean the file was unreadable
-function parseCat(stdout) {
+// stdout of readCmd -> { path: text }; records without content mean the file was unreadable
+function parseReadOutput(stdout) {
     const out = {};
     const lines = stdout.split("\n");
     let cur = null;
