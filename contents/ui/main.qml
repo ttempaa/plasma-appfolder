@@ -53,8 +53,6 @@ PlasmoidItem {
     property var visibleApps: []
 
     function rebuild() {
-        // reuse by url: survivors keep their parsed state untouched, only
-        // genuinely new files cost a read (usually a synchronous cache hit)
         const byUrl = {};
         for (let i = 0; i < apps.length; ++i) {
             byUrl[apps[i].source.toString()] = apps[i];
@@ -62,17 +60,10 @@ PlasmoidItem {
         const fresh = [];
         for (let i = 0; i < folderModel.count; ++i) {
             const url = folderModel.get(i, "fileUrl").toString();
-            const survivor = byUrl[url];
-            if (survivor) {
-                delete byUrl[url];
-                fresh.push(survivor);
-            } else {
-                const info = appInfoComponent.createObject(root, { source: url });
-                fresh.push(info);
-                if (!info.restoreFromCache()) {
-                    requestText(info);
-                }
-            }
+            const info = byUrl[url] || appInfoComponent.createObject(root, { source: url });
+            delete byUrl[url];
+            fresh.push(info);
+            requestText(info);
         }
         apps = fresh;
         const gone = Object.keys(byUrl);
@@ -106,7 +97,7 @@ PlasmoidItem {
         }
     }
 
-    // .desktop reads are batched: every file that missed the parse cache is
+    // .desktop reads are batched: every file of the folder is
     // dumped by one cat process — QML itself cannot read local files (the
     // XHR file scheme needs QML_XHR_ALLOW_FILE_READ), the executable engine
     // has no such restriction
@@ -200,6 +191,7 @@ PlasmoidItem {
 
         onFolderChanged: rebuildTimer.restart()
         onCountChanged: rebuildTimer.restart()
+        onDataChanged: rebuildTimer.restart()
     }
 
     Component {
@@ -592,6 +584,7 @@ PlasmoidItem {
     }
 
     function openPopup() {
+        rebuild();
         sharedConfig.refresh();
         placePopup();
         popup.visible = true;

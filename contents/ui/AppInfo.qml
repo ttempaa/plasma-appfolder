@@ -15,24 +15,8 @@ QtObject {
     property bool unreadable
     property bool dead
 
-    // resolves from the parse cache when possible; returns false when the
-    // file still needs reading — the owner feeds the text back via
-    // applyText()/applyFileName(), files are read in one batch
-    function restoreFromCache() {
-        name = "";
-        icon = "";
-        isApplication = false;
-        unreadable = false;
-        const cached = DesktopFile.fromCache(info.source.toString());
-        if (cached !== undefined) {
-            apply(cached);
-            return true;
-        }
-        return false;
-    }
-
     function applyText(text) {
-        apply(DesktopFile.cachedParse(info.source.toString(), text, Qt.locale()));
+        apply(DesktopFile.parse(text, Qt.locale()));
     }
 
     function apply(parsed) {

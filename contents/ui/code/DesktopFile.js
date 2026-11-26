@@ -1,14 +1,7 @@
 .pragma library
 
-// .desktop entries: text parsing with a per-engine cache, the batched read
-// command with its "==="-marked output, the visible-app filter and the drop
-// commands. No QML context, no i18n; fallbacks are layered by callers.
-
 .import "Paths.js" as Paths
 .import "Shell.js" as Shell
-
-// url -> last parse result, shared for the engine's lifetime
-var cache = {};
 
 function parse(text, locale) {
     const lines = text.split("\n");
@@ -59,35 +52,16 @@ function parse(text, locale) {
     };
 }
 
-// cache probe without touching the filesystem: lets AppInfo reapply a
-// previous parse synchronously after rebuilds and reordering; a .desktop
-// edited on disk keeps serving the old parse until the engine restarts
-function fromCache(url) {
-    const key = url.toString();
-    if (Object.prototype.hasOwnProperty.call(cache, key)) {
-        return cache[key];
-    }
-    return undefined;
-}
-
-function cachedParse(url, text, locale) {
-    const hit = fromCache(url);
-    if (hit !== undefined) {
-        return hit;
-    }
-    const parsed = parse(text, locale);
-    cache[url.toString()] = parsed;
-    return parsed;
-}
-
 // one shell command that dumps every file with a ===<path> marker line
 // before each — a single process for the whole folder; keys in .desktop
 // syntax cannot start with "=", so a marker line is unambiguous
+// [ -f ]: the model lists symlinks to fifos, cat would hang on them
 function catCmd(paths) {
     const parts = [];
     for (let i = 0; i < paths.length; ++i) {
         const quoted = Shell.quote(paths[i]);
-        parts.push("printf '\\n===%s\\n' " + quoted + "; cat " + quoted);
+        parts.push("printf '\\n===%s\\n' " + quoted);
+        parts.push("[ -f " + quoted + " ] && cat " + quoted);
     }
     return parts.join("; ");
 }
