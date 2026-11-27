@@ -30,6 +30,7 @@
 - **Everything by drag and drop** — drop a `.desktop` file on the widget, drag an icon out of the popup; the file just moves
 - **A plain folder** — just `.desktop` files: edit them in Dolphin or a terminal, sync however you like — changes are picked up automatically
 - **Smart popup** — picks its side of the screen and never spills past the edges; sorting, scrolling, click or hover to open
+- **Lightweight** — pure QML with no compiled code; nothing polls in the background, the folder is read when it changes or the popup opens
 
 ## Installation
 
