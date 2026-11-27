@@ -1,7 +1,7 @@
 {
     "KPlugin": {
         "Id": "com.github.ttempaa.plasma.appfolder",
-        "Version": "1.0.0",
+        "Version": "1.0.1",
         "Name": "App Folder",
         "Name[ru]": "Папка приложений",
         "Description": "Folder-style application launcher for the desktop",
